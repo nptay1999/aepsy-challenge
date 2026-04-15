@@ -1,0 +1,29 @@
+@font-face {
+  font-family: 'Recoleta';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src:
+    url('/fonts/RecoletaMedium/font.woff2') format('woff2'),
+    url('/fonts/RecoletaMedium/font.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'TTNormsPro';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src:
+    url('/fonts/TTNormsProRg/font.woff2') format('woff2'),
+    url('/fonts/TTNormsProRg/font.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'TTNormsPro';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src:
+    url('/fonts/TTNormsProMd/font.woff2') format('woff2'),
+    url('/fonts/TTNormsProMd/font.woff') format('woff');
+}

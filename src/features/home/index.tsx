@@ -1,3 +1,13 @@
+import B2bBanner from '@/features/home/b2b-banner'
+import HeroSection from './hero-section'
+
 export default function Home() {
-  return <div className="text-3xl text-red-600 font-bold underline">Home</div>
+  return (
+    <main>
+      <div className="relative">
+        <HeroSection />
+      </div>
+      <B2bBanner />
+    </main>
+  )
 }
