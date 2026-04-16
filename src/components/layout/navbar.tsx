@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
 import { AlignRight, Globe } from 'lucide-react'
 
 type NavbarProps = { variant?: 'white' | 'primary' }
@@ -7,15 +8,17 @@ export default function Navbar({ variant = 'white' }: NavbarProps) {
   return (
     <nav className="absolute inset-x-0 lg:inset-x-4 top-0 z-10 flex items-center justify-between px-6 py-4 h-16">
       <div className="flex items-center gap-6">
-        <span
-          className={cn(
-            'font-serif text-2xl',
-            variant === 'white' && 'text-white',
-            variant === 'primary' && 'text-primary',
-          )}
-        >
-          Aepsy
-        </span>
+        <Link to="/">
+          <span
+            className={cn(
+              'font-serif text-2xl',
+              variant === 'white' && 'text-white',
+              variant === 'primary' && 'text-primary',
+            )}
+          >
+            Aepsy
+          </span>
+        </Link>
       </div>
 
       <div

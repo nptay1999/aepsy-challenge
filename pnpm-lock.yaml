@@ -20,6 +20,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.168.22
         version: 1.168.22(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@wavesurfer/react':
+        specifier: ^1.0.12
+        version: 1.0.12(react@19.2.5)(wavesurfer.js@7.12.6)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -47,6 +50,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      wavesurfer.js:
+        specifier: ^7.12.6
+        version: 7.12.6
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
@@ -1117,6 +1123,12 @@ packages:
         optional: true
       babel-plugin-react-compiler:
         optional: true
+
+  '@wavesurfer/react@1.0.12':
+    resolution: {integrity: sha512-BNHpz2ryKNVvJdxB47pCPUsNCsjb2pZRysg82M5djIiw0vsiSJwdlt5jaAfDo3vd5IWrcoK9OiPQKO9ZEVNpDQ==}
+    peerDependencies:
+      react: ^18.2.0 || ^19.0.0
+      wavesurfer.js: '>=7.7.14'
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -2825,6 +2837,9 @@ packages:
       yaml:
         optional: true
 
+  wavesurfer.js@7.12.6:
+    resolution: {integrity: sha512-zSxPgOFprtyJ31ppHQF0+E9jAmjAhi1rR36yIW6h1GOYdpRxDe6mbkYtlChqLK0Iz8ROBweiEFw2zus7tDFibA==}
+
   web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
@@ -3935,6 +3950,11 @@ snapshots:
     optionalDependencies:
       '@rolldown/plugin-babel': 0.2.3(@babel/core@7.29.0)(@babel/runtime@7.29.2)(rolldown@1.0.0-rc.15)(vite@8.0.8(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
       babel-plugin-react-compiler: 1.0.0
+
+  '@wavesurfer/react@1.0.12(react@19.2.5)(wavesurfer.js@7.12.6)':
+    dependencies:
+      react: 19.2.5
+      wavesurfer.js: 7.12.6
 
   accepts@2.0.0:
     dependencies:
@@ -5564,6 +5584,8 @@ snapshots:
       jiti: 2.6.1
       tsx: 4.21.0
       yaml: 2.8.3
+
+  wavesurfer.js@7.12.6: {}
 
   web-streams-polyfill@3.3.3: {}
 
