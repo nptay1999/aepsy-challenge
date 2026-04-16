@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .claude
+documents
+
+# Playwright
+/playwright-report/
+/test-results/
