@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavbarVariant } from '@/components/layout/navbar-context'
 import {
   Stepper,
@@ -16,12 +15,20 @@ import Step1VoiceRecording from './step-1-voice-recording'
 import Step2SelectRelevantTopics from './step-2-select-relevant-topics'
 import Step3Psychologists from './step-3-psychologists'
 import { Button } from '@/components/ui/button'
+import { useOnboardingStore } from './onboarding.store'
+import { useShallow } from 'zustand/react/shallow'
 
 const stepTitles = ['Record Your Feeling', 'Select Relevant Topics', 'Choose Psychologists']
 
 export default function Onboarding() {
   useNavbarVariant('primary')
-  const [activeStep, setActiveStep] = useState(1)
+  const { activeStep, setActiveStep, clearSelectedTopics } = useOnboardingStore(
+    useShallow((state) => ({
+      activeStep: state.activeStep,
+      setActiveStep: state.setActiveStep,
+      clearSelectedTopics: state.clearSelectedTopics,
+    })),
+  )
 
   return (
     <div className="bg-primary-foreground min-h-[calc(100dvh-15rem)] pt-16 px-6 flex">
@@ -39,7 +46,7 @@ export default function Onboarding() {
               size="icon"
               className="absolute top-6 -left-2 lg:top-6.5 lg:left-16 rounded-full"
               variant="ghost"
-              onClick={() => setActiveStep((step) => step - 1)}
+              onClick={() => setActiveStep(activeStep - 1)}
             >
               <ChevronLeft className="size-8 text-primary" />
             </Button>
@@ -56,7 +63,7 @@ export default function Onboarding() {
             ))}
           </StepperPanel>
 
-          <StepperNav className="lg:px-8 max-w-3xl mx-auto">
+          <StepperNav className="lg:px-8 max-w-xs lg:max-w-3xl mx-auto">
             {stepTitles.map((title, index) => (
               <StepperItem key={index} step={index + 1} className="relative">
                 <StepperTrigger className="flex justify-start gap-1.5">
@@ -77,7 +84,12 @@ export default function Onboarding() {
               value={1}
               className="flex lg:items-start items-center justify-center min-h-full lg:py-20"
             >
-              <Step1VoiceRecording onComplete={() => setActiveStep(2)} />
+              <Step1VoiceRecording
+                onComplete={() => {
+                  setActiveStep(2)
+                  clearSelectedTopics()
+                }}
+              />
             </StepperContent>
             <StepperContent
               value={2}
