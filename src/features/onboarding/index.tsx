@@ -37,7 +37,7 @@ export default function Onboarding() {
           {activeStep !== 1 && (
             <Button
               size="icon-lg"
-              className="absolute top-20 left-16 rounded-full"
+              className="absolute top-6 left-0 lg:top-20 lg:left-16 rounded-full"
               variant="ghost"
               onClick={() => setActiveStep((step) => step - 1)}
             >
