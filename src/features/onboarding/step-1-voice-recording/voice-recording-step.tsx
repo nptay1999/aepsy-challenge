@@ -72,11 +72,11 @@ export function VoiceRecordingStep({ onComplete }: VoiceRecordingStepProps) {
         <Button
           onClick={start}
           size="icon"
-          className="size-32 rounded-full bg-peach-500 hover:bg-peach-600 text-white"
+          className="size-30 rounded-full bg-peach-500 hover:bg-peach-600 text-white"
         >
           <Play className="size-12 fill-current" />
         </Button>
-        <span className="font-medium text-lg">Start Recording</span>
+        <span className="font-medium text-lg text-primary">Start Recording</span>
       </div>
     )
   }

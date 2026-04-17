@@ -11,10 +11,11 @@ import {
   StepperTitle,
   StepperTrigger,
 } from '@/components/reui/stepper'
-import { CheckIcon, LoaderCircleIcon } from 'lucide-react'
+import { CheckIcon, ChevronLeft, LoaderCircleIcon } from 'lucide-react'
 import Step1VoiceRecording from './step-1-voice-recording'
 import Step2SelectRelevantTopics from './step-2-select-relevant-topics'
 import Step3Psychologists from './step-3-psychologists'
+import { Button } from '@/components/ui/button'
 
 const stepTitles = ['Record Your Feeling', 'Select Relevant Topics', 'Choose Psychologists']
 
@@ -32,8 +33,18 @@ export default function Onboarding() {
             completed: <CheckIcon className="size-3.5" />,
             loading: <LoaderCircleIcon className="size-3.5 animate-spin" />,
           }}
-          className="w-full pt-8 flex flex-col flex-1"
+          className="w-full pt-8 flex flex-col flex-1 relative"
         >
+          {activeStep !== 1 && (
+            <Button
+              size="icon-lg"
+              className="absolute top-20 left-16 rounded-full"
+              variant="ghost"
+              onClick={() => setActiveStep((step) => step - 1)}
+            >
+              <ChevronLeft className="size-8 text-primary" />
+            </Button>
+          )}
           <StepperPanel className="lg:hidden block pb-4">
             {stepTitles.map((title, index) => (
               <StepperContent
@@ -73,13 +84,13 @@ export default function Onboarding() {
               value={2}
               className="flex lg:items-start items-center justify-center min-h-full lg:py-20"
             >
-              <Step2SelectRelevantTopics />
+              <Step2SelectRelevantTopics onNext={() => setActiveStep(3)} />
             </StepperContent>
             <StepperContent
               value={3}
               className="flex lg:items-start items-center justify-center min-h-full lg:py-20"
             >
-              <Step3Psychologists />
+              <Step3Psychologists onBack={() => setActiveStep(2)} />
             </StepperContent>
           </StepperPanel>
         </Stepper>
