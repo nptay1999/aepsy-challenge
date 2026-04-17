@@ -2,6 +2,7 @@ import { useLazyQuery } from '@apollo/client/react'
 import { useEffect, useState } from 'react'
 import { SEARCH_PROVIDERS } from '@/services/queries'
 import { get } from 'es-toolkit/compat'
+import { useOnboardingStore } from '@/features/onboarding/onboarding.store'
 
 export type ProviderTag = {
   type: string
@@ -31,23 +32,14 @@ export type SearchProvidersData = {
   }
 }
 
-function readTopicsFromSession(): string[] {
-  try {
-    const raw = sessionStorage.getItem('aepsy_selected_topics')
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as { value: string }[]
-    return parsed.map((t) => t.value)
-  } catch {
-    return []
-  }
-}
-
 const PAGE_SIZE = 6
 
 export function usePsychologistSearch() {
   const [providers, setProviders] = useState<Provider[]>([])
   const [pageNum, setPageNum] = useState(1)
   const [canLoadMore, setCanLoadMore] = useState(false)
+
+  const selectedTopics = useOnboardingStore((state) => state.selectedTopics)
 
   const [executeQuery, { loading, error }] = useLazyQuery<SearchProvidersData>(SEARCH_PROVIDERS, {
     fetchPolicy: 'network-only',
@@ -56,8 +48,9 @@ export function usePsychologistSearch() {
   const isLoadingMore = loading && providers.length > 0
   const isLoading = loading && providers.length === 0
 
+  const rawDisorders = selectedTopics.map((t) => t.value)
+
   useEffect(() => {
-    const rawDisorders = readTopicsFromSession()
     executeQuery({ variables: { rawDisorders, pageSize: PAGE_SIZE, pageNum: 1 } }).then(
       (result) => {
         if (!result.data) return
@@ -66,12 +59,11 @@ export function usePsychologistSearch() {
         setCanLoadMore(page.canLoadMore)
       },
     )
-  }, [executeQuery])
+  }, [executeQuery, rawDisorders])
 
   const loadMore = async () => {
     const nextPage = pageNum + 1
     setPageNum(nextPage)
-    const rawDisorders = readTopicsFromSession()
     const result = await executeQuery({
       variables: { rawDisorders, pageSize: PAGE_SIZE, pageNum: nextPage },
     })
@@ -85,7 +77,6 @@ export function usePsychologistSearch() {
   const retry = async () => {
     setProviders([])
     setPageNum(1)
-    const rawDisorders = readTopicsFromSession()
     const result = await executeQuery({
       variables: { rawDisorders, pageSize: PAGE_SIZE, pageNum: 1 },
     })

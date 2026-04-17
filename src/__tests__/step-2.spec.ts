@@ -4,11 +4,16 @@ import { test, expect } from '@playwright/test'
 // Helpers
 // ---------------------------------------------------------------------------
 
-const AUDIO_PAYLOAD = JSON.stringify({
+const AUDIO_DATA = {
   audioBase64: btoa('fake-audio'),
   mimeType: 'audio/webm;codecs=opus',
   durationMs: 10000,
   recordedAt: new Date().toISOString(),
+}
+
+const ONBOARDING_PAYLOAD_WITH_AUDIO = JSON.stringify({
+  state: { ...AUDIO_DATA, selectedTopics: [] },
+  version: 0,
 })
 
 /** Navigate to the onboarding page, optionally seed audio, then click step 2 tab. */
@@ -19,9 +24,15 @@ async function goToStep2(
   await page.goto('/onboarding')
   if (withAudio) {
     await page.evaluate(
-      (payload) => sessionStorage.setItem('aepsy_voice_recording', payload),
-      AUDIO_PAYLOAD,
+      (payload) => sessionStorage.setItem('aepsy_onboarding', payload),
+      ONBOARDING_PAYLOAD_WITH_AUDIO,
     )
+    await page.evaluate((data) => {
+      const store = (window as Record<string, unknown>).__onboardingStore as
+        | { setState: (s: object) => void }
+        | undefined
+      store?.setState(data)
+    }, AUDIO_DATA)
   }
   await page.getByRole('tab').nth(1).click()
 }
@@ -134,11 +145,13 @@ test.describe('step 2 — error state', () => {
     // Wait for error state
     await expect(page.getByRole('alert')).toBeVisible()
 
-    // Seed audio so next attempt succeeds
-    await page.evaluate(
-      (payload) => sessionStorage.setItem('aepsy_voice_recording', payload),
-      AUDIO_PAYLOAD,
-    )
+    // Update in-memory store with audio so next attempt succeeds
+    await page.evaluate((data) => {
+      const store = (window as Record<string, unknown>).__onboardingStore as
+        | { setState: (s: object) => void }
+        | undefined
+      store?.setState(data)
+    }, AUDIO_DATA)
 
     await page.getByRole('button', { name: 'Try again' }).click()
 
@@ -160,8 +173,8 @@ test.describe('step 2 — error state', () => {
 test.describe('step 2 — session persistence', () => {
   test('page reload on step 2 restores previously selected topics', async ({ page }) => {
     await page.addInitScript((payload) => {
-      sessionStorage.setItem('aepsy_voice_recording', payload)
-    }, AUDIO_PAYLOAD)
+      sessionStorage.setItem('aepsy_onboarding', payload)
+    }, ONBOARDING_PAYLOAD_WITH_AUDIO)
 
     await page.goto('/onboarding')
     await page.getByRole('tab').nth(1).click()

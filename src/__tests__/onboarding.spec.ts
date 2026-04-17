@@ -621,10 +621,18 @@ test.describe('voice recording — session persistence', () => {
     await page.getByRole('button', { name: 'Stop Recording' }).click()
     await expect(page.getByRole('button', { name: 'Re-record' })).toBeVisible()
 
-    await page.waitForFunction(() => sessionStorage.getItem('aepsy_voice_recording') !== null)
+    await page.waitForFunction(() => {
+      const r = sessionStorage.getItem('aepsy_onboarding')
+      if (!r) return false
+      try {
+        return JSON.parse(r).state?.audioBase64 != null
+      } catch {
+        return false
+      }
+    })
 
-    const raw = await page.evaluate(() => sessionStorage.getItem('aepsy_voice_recording'))
-    const parsed = JSON.parse(raw!)
+    const raw = await page.evaluate(() => sessionStorage.getItem('aepsy_onboarding'))
+    const parsed = JSON.parse(raw!).state
     expect(parsed.audioBase64).toBeTruthy()
     expect(parsed.mimeType).toBeTruthy()
     expect(typeof parsed.durationMs).toBe('number')
@@ -638,7 +646,15 @@ test.describe('voice recording — session persistence', () => {
     await page.getByRole('button', { name: 'Stop Recording' }).click()
     await expect(page.getByRole('button', { name: 'Re-record' })).toBeVisible()
 
-    await page.waitForFunction(() => sessionStorage.getItem('aepsy_voice_recording') !== null)
+    await page.waitForFunction(() => {
+      const r = sessionStorage.getItem('aepsy_onboarding')
+      if (!r) return false
+      try {
+        return JSON.parse(r).state?.audioBase64 != null
+      } catch {
+        return false
+      }
+    })
     await page.reload()
 
     await expect(page.getByRole('button', { name: 'Re-record' })).toBeVisible()
@@ -650,13 +666,19 @@ test.describe('voice recording — session persistence', () => {
     await context.addInitScript(grantMockScript)
     // Pre-seed sessionStorage so we don't have to wait 5 real seconds
     await page.addInitScript(() => {
-      const payload = {
-        audioBase64: btoa('fake-audio'),
-        mimeType: 'audio/webm;codecs=opus',
-        durationMs: 10000,
-        recordedAt: new Date().toISOString(),
-      }
-      sessionStorage.setItem('aepsy_voice_recording', JSON.stringify(payload))
+      sessionStorage.setItem(
+        'aepsy_onboarding',
+        JSON.stringify({
+          state: {
+            audioBase64: btoa('fake-audio'),
+            mimeType: 'audio/webm;codecs=opus',
+            durationMs: 10000,
+            recordedAt: new Date().toISOString(),
+            selectedTopics: [],
+          },
+          version: 0,
+        }),
+      )
     })
     await page.goto('/onboarding')
 
@@ -667,13 +689,19 @@ test.describe('voice recording — session persistence', () => {
   test('Continue is disabled after reload when saved duration <5s', async ({ page, context }) => {
     await context.addInitScript(grantMockScript)
     await page.addInitScript(() => {
-      const payload = {
-        audioBase64: btoa('fake-audio'),
-        mimeType: 'audio/webm;codecs=opus',
-        durationMs: 2000,
-        recordedAt: new Date().toISOString(),
-      }
-      sessionStorage.setItem('aepsy_voice_recording', JSON.stringify(payload))
+      sessionStorage.setItem(
+        'aepsy_onboarding',
+        JSON.stringify({
+          state: {
+            audioBase64: btoa('fake-audio'),
+            mimeType: 'audio/webm;codecs=opus',
+            durationMs: 2000,
+            recordedAt: new Date().toISOString(),
+            selectedTopics: [],
+          },
+          version: 0,
+        }),
+      )
     })
     await page.goto('/onboarding')
 
@@ -687,13 +715,29 @@ test.describe('voice recording — session persistence', () => {
 
     await page.getByRole('button', { name: 'Start Recording' }).click()
     await page.getByRole('button', { name: 'Stop Recording' }).click()
-    await page.waitForFunction(() => sessionStorage.getItem('aepsy_voice_recording') !== null)
+    await page.waitForFunction(() => {
+      const r = sessionStorage.getItem('aepsy_onboarding')
+      if (!r) return false
+      try {
+        return JSON.parse(r).state?.audioBase64 != null
+      } catch {
+        return false
+      }
+    })
 
     await page.getByRole('button', { name: 'Re-record' }).click()
     await expect(page.getByRole('button', { name: 'Start Recording' })).toBeVisible()
 
-    const saved = await page.evaluate(() => sessionStorage.getItem('aepsy_voice_recording'))
-    expect(saved).toBeNull()
+    const audioBase64 = await page.evaluate(() => {
+      const r = sessionStorage.getItem('aepsy_onboarding')
+      if (!r) return null
+      try {
+        return JSON.parse(r).state?.audioBase64 ?? null
+      } catch {
+        return null
+      }
+    })
+    expect(audioBase64).toBeNull()
 
     await page.reload()
     await expect(page.getByRole('button', { name: 'Start Recording' })).toBeVisible()

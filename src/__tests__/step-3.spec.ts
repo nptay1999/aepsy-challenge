@@ -4,16 +4,32 @@ import { test, expect } from '@playwright/test'
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const TOPICS_PAYLOAD = JSON.stringify([
-  { value: 'U_DIS_DEPRESSION', label: 'Feeling down' },
-  { value: 'U_DIS_STRESS', label: 'Stress' },
-])
+const TOPICS_PAYLOAD = JSON.stringify({
+  state: {
+    audioBase64: null,
+    mimeType: '',
+    durationMs: 0,
+    recordedAt: null,
+    selectedTopics: [
+      { value: 'U_DIS_DEPRESSION', label: 'Feeling down' },
+      { value: 'U_DIS_STRESS', label: 'Stress' },
+    ],
+  },
+  version: 0,
+})
 
-const AUDIO_PAYLOAD = JSON.stringify({
-  audioBase64: btoa('fake-audio'),
-  mimeType: 'audio/webm;codecs=opus',
-  durationMs: 10000,
-  recordedAt: new Date().toISOString(),
+const TOPICS_AND_AUDIO_PAYLOAD = JSON.stringify({
+  state: {
+    audioBase64: btoa('fake-audio'),
+    mimeType: 'audio/webm;codecs=opus',
+    durationMs: 10000,
+    recordedAt: new Date().toISOString(),
+    selectedTopics: [
+      { value: 'U_DIS_DEPRESSION', label: 'Feeling down' },
+      { value: 'U_DIS_STRESS', label: 'Stress' },
+    ],
+  },
+  version: 0,
 })
 
 function makeProvider(overrides: {
@@ -60,7 +76,7 @@ function errorResponse() {
 /** Seed sessionStorage with topics so Step 3 has rawDisorders to query with. */
 async function seedTopics(page: import('@playwright/test').Page) {
   await page.evaluate((payload) => {
-    sessionStorage.setItem('aepsy_selected_topics', payload)
+    sessionStorage.setItem('aepsy_onboarding', payload)
   }, TOPICS_PAYLOAD)
 }
 
@@ -299,18 +315,9 @@ test.describe('step 3 — navigation', () => {
   })
 
   test('topic selections are preserved when returning to Step 2', async ({ page }) => {
-    await page.addInitScript((topics) => {
-      sessionStorage.setItem('aepsy_selected_topics', topics)
-      sessionStorage.setItem(
-        'aepsy_voice_recording',
-        JSON.stringify({
-          audioBase64: btoa('fake-audio'),
-          mimeType: 'audio/webm;codecs=opus',
-          durationMs: 10000,
-          recordedAt: new Date().toISOString(),
-        }),
-      )
-    }, TOPICS_PAYLOAD)
+    await page.addInitScript((payload) => {
+      sessionStorage.setItem('aepsy_onboarding', payload)
+    }, TOPICS_AND_AUDIO_PAYLOAD)
 
     await page.route('**/graphql', async (route) => {
       await route.fulfill({ json: successResponse([makeProvider({})]) })
@@ -331,8 +338,3 @@ test.describe('step 3 — navigation', () => {
     await expect(page.getByRole('button', { name: 'Feeling down' })).toHaveClass(/bg-peach-500/)
   })
 })
-
-// ---------------------------------------------------------------------------
-// Audio payload for Step 2 navigation tests (unused but kept for future use)
-// ---------------------------------------------------------------------------
-void AUDIO_PAYLOAD

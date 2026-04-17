@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useReducer } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useAudioRecorder } from './use-audio-recorder'
+import { useOnboardingStore } from '@/features/onboarding/onboarding.store'
 
 export type VoiceRecorderState =
   | 'idle'
@@ -57,45 +59,8 @@ interface UseVoiceRecorderOptions {
 }
 
 // ---------------------------------------------------------------------------
-// sessionStorage helpers
+// Helpers
 // ---------------------------------------------------------------------------
-
-const SESSION_KEY = 'aepsy_voice_recording'
-
-interface SessionPayload {
-  audioBase64: string
-  mimeType: string
-  durationMs: number
-  recordedAt: string
-}
-
-function parseSavedRecording(): {
-  audioBase64: string
-  mimeType: string
-  durationMs: number
-} | null {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
-    if (!raw) return null
-    const parsed: SessionPayload = JSON.parse(raw)
-    if (!parsed.audioBase64 || !parsed.mimeType || typeof parsed.durationMs !== 'number') {
-      sessionStorage.removeItem(SESSION_KEY)
-      return null
-    }
-    return {
-      audioBase64: parsed.audioBase64,
-      mimeType: parsed.mimeType,
-      durationMs: parsed.durationMs,
-    }
-  } catch {
-    try {
-      sessionStorage.removeItem(SESSION_KEY)
-    } catch {
-      /* no-op */
-    }
-    return null
-  }
-}
 
 function base64ToBlob(base64: string, mimeType: string): Blob {
   const bytes = atob(base64)
@@ -110,21 +75,6 @@ async function blobToBase64(blob: Blob): Promise<string> {
   const bytes = new Uint8Array(buffer)
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!)
   return btoa(binary)
-}
-
-async function persistRecording(blob: Blob, mimeType: string, durationMs: number): Promise<void> {
-  try {
-    const audioBase64 = await blobToBase64(blob)
-    const payload: SessionPayload = {
-      audioBase64,
-      mimeType,
-      durationMs,
-      recordedAt: new Date().toISOString(),
-    }
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload))
-  } catch {
-    /* best-effort */
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -146,11 +96,30 @@ function detectMimeType(): string {
 // ---------------------------------------------------------------------------
 
 export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoiceRecorderReturn {
+  const {
+    audioBase64,
+    mimeType: savedMime,
+    durationMs: savedDurationMs,
+    clearRecording,
+    setRecording,
+  } = useOnboardingStore(
+    useShallow((state) => ({
+      audioBase64: state.audioBase64,
+      mimeType: state.mimeType,
+      durationMs: state.durationMs,
+      clearRecording: state.clearRecording,
+      setRecording: state.setRecording,
+    })),
+  )
+
   const [mimeType] = useState<string>(() => detectMimeType())
   const inner = useAudioRecorder({ mimeType, timeslice: 100 })
 
-  // Parse sessionStorage exactly once (lazy init is guaranteed to run once).
-  const [savedData] = useState(() => parseSavedRecording())
+  // Read saved recording from store exactly once on mount.
+  const [savedData] = useState(() => {
+    if (!audioBase64 || !savedMime || typeof savedDurationMs !== 'number') return null
+    return { audioBase64, mimeType: savedMime, durationMs: savedDurationMs }
+  })
 
   const [{ phase, durationMs }, dispatch] = useReducer(
     recorderReducer,
@@ -162,19 +131,13 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
   )
 
   // Decode the saved blob synchronously in the lazy initializer — no setState-in-effect needed.
-  // restoredActive gates whether the restored data surfaces in the return value;
-  // reset() flips it false, URL is revoked on unmount via the cleanup effect below.
   const [restoredData] = useState<{ blob: Blob; url: string } | null>(() => {
     if (!savedData) return null
     try {
       const blob = base64ToBlob(savedData.audioBase64, savedData.mimeType)
       return { blob, url: URL.createObjectURL(blob) }
     } catch {
-      try {
-        sessionStorage.removeItem(SESSION_KEY)
-      } catch {
-        /* no-op */
-      }
+      clearRecording()
       return null
     }
   })
@@ -187,7 +150,6 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
   }, [restoredData])
 
   const recordingStartMsRef = useRef(0)
-  // Captures the final duration at stop time so the persist effect reads the right value.
   const finalDurationMsRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -203,7 +165,12 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
 
   // Shadow chunks + encoded ref for partial (beforeunload) saves.
   const shadowChunksRef = useRef<Blob[]>([])
-  const lastPartialSaveRef = useRef<SessionPayload | null>(null)
+  const lastPartialSaveRef = useRef<{
+    audioBase64: string
+    mimeType: string
+    durationMs: number
+    recordedAt: string
+  } | null>(null)
   const encodeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const clearTimer = useCallback(() => {
@@ -217,9 +184,7 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     }
   }, [])
 
-  // Shadow-collect chunks via addEventListener so useAudioRecorder stays unmodified.
-  // Every 2 s (debounced) the accumulated chunks are encoded into a ref so the
-  // beforeunload handler can write to sessionStorage synchronously.
+  // Shadow-collect chunks and encode into a ref every 2s for beforeunload partial saves.
   useEffect(() => {
     const recorder = inner.mediaRecorder
     if (!recorder) return
@@ -258,24 +223,19 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     }
   }, [inner.mediaRecorder, mimeType])
 
-  // Write the last encoded partial save to sessionStorage on page unload.
-  // The handler is fully synchronous — it reads from the ref populated above.
+  // Write the last encoded partial save to the store on page unload.
   useEffect(() => {
     if (phase !== 'active') return
 
     const handleBeforeUnload = () => {
       if (lastPartialSaveRef.current) {
-        try {
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify(lastPartialSaveRef.current))
-        } catch {
-          /* best-effort */
-        }
+        setRecording(lastPartialSaveRef.current)
       }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [phase])
+  }, [phase, setRecording])
 
   // Reconcile inner hook state changes → phase transitions.
   useEffect(() => {
@@ -300,12 +260,21 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     }
   }, [inner.isRecording, inner.error, inner.audioBlob, phase, clearTimer])
 
-  // Persist the complete recording to sessionStorage when recording stops normally.
-  // Skipped on the restore path because inner.audioBlob is null there.
+  // Persist the complete recording to the store when recording stops normally.
   useEffect(() => {
     if (phase !== 'done' || !inner.audioBlob) return
-    void persistRecording(inner.audioBlob, mimeType, finalDurationMsRef.current)
-  }, [phase, inner.audioBlob, mimeType])
+    const blob = inner.audioBlob
+    const recordedMime = mimeType
+    const duration = finalDurationMsRef.current
+    void blobToBase64(blob).then((audioBase64) => {
+      setRecording({
+        audioBase64,
+        mimeType: recordedMime,
+        durationMs: duration,
+        recordedAt: new Date().toISOString(),
+      })
+    })
+  }, [phase, inner.audioBlob, mimeType, setRecording])
 
   // Cleanup timers on unmount.
   useEffect(() => {
@@ -329,13 +298,9 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     inner.clearRecording()
     dispatch({ type: 'RESET' })
     lastPartialSaveRef.current = null
-    try {
-      sessionStorage.removeItem(SESSION_KEY)
-    } catch {
-      /* no-op */
-    }
+    clearRecording()
     setRestoredActive(false)
-  }, [inner, clearTimer])
+  }, [inner, clearTimer, clearRecording])
 
   const state: VoiceRecorderState = (() => {
     switch (phase) {
