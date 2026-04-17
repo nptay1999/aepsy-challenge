@@ -62,7 +62,7 @@ interface VoiceRecordingStepProps {
 
 export function VoiceRecordingStep({ onComplete }: VoiceRecordingStepProps) {
   const [maxReached, setMaxReached] = useState(false)
-  const { state, start, stop, reset, durationMs, audioUrl, stream } = useVoiceRecorder({
+  const { state, start, stop, reset, durationMs, audioBlob, stream } = useVoiceRecorder({
     onMaxDurationReached: () => setMaxReached(true),
   })
 
@@ -114,7 +114,7 @@ export function VoiceRecordingStep({ onComplete }: VoiceRecordingStepProps) {
   if (state === 'stopped') {
     return (
       <div className={`${cardClass} flex flex-col gap-8`}>
-        {audioUrl && <AudioPlayer audioUrl={audioUrl} durationMs={durationMs} />}
+        {audioBlob && <AudioPlayer audioBlob={audioBlob} durationMs={durationMs} />}
         {maxReached && (
           <p className="text-sm text-center text-gray-500">Maximum recording length reached</p>
         )}
