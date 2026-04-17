@@ -1,3 +1,4 @@
+import NotFoundPage from '@/components/not-found-page'
 import { NavbarProvider } from '@/components/layout/navbar-context'
 import MainLayout from '@/components/layout/main-layout'
 import apolloClient from '@/services/apollo-client'
@@ -12,4 +13,5 @@ export const Route = createRootRoute({
       </NavbarProvider>
     </ApolloProvider>
   ),
+  notFoundComponent: NotFoundPage,
 })
