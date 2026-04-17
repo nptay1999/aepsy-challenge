@@ -3,7 +3,7 @@ import { Skeleton } from './ui/skeleton'
 import { cn } from '@/lib/utils'
 
 type ImageProps = ImgHTMLAttributes<HTMLImageElement> & {
-  containerClassname: string
+  containerClassname?: string
 }
 
 const DEFAULT_IMAGE = '/images/img-placeholder.png'

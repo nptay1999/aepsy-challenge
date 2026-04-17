@@ -1,14 +1,15 @@
 import { useLazyQuery } from '@apollo/client/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SEARCH_PROVIDERS } from '@/services/queries'
+import { get } from 'es-toolkit/compat'
 
-interface ProviderTag {
+export type ProviderTag = {
   type: string
   subType: string
   text: string
 }
 
-export interface Provider {
+export type Provider = {
   userInfo: { firebaseUid: string; avatar: string | null }
   userName: { firstName: string; lastName: string }
   profile: {
@@ -17,14 +18,16 @@ export interface Provider {
   }
 }
 
-interface SearchProvidersData {
+export type ProvidersResponse = {
+  canLoadMore: boolean
+  totalSize: number
+  providers: Provider[]
+}
+
+export type SearchProvidersData = {
   searchProviders: {
     id: string
-    providers: {
-      canLoadMore: boolean
-      totalSize: number
-      providers: Provider[]
-    }
+    providers: ProvidersResponse
   }
 }
 
@@ -45,57 +48,52 @@ export function usePsychologistSearch() {
   const [providers, setProviders] = useState<Provider[]>([])
   const [pageNum, setPageNum] = useState(1)
   const [canLoadMore, setCanLoadMore] = useState(false)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const rawDisordersRef = useRef<string[]>([])
-  const appendRef = useRef(false)
 
-  const [executeQuery, { data, loading, error }] = useLazyQuery<SearchProvidersData>(
-    SEARCH_PROVIDERS,
-    { fetchPolicy: 'network-only' },
-  )
+  const [executeQuery, { loading, error }] = useLazyQuery<SearchProvidersData>(SEARCH_PROVIDERS, {
+    fetchPolicy: 'network-only',
+  })
 
-  // Show skeletons only on the initial fetch (no accumulated providers yet)
-  const isLoading = loading && providers.length === 0 && !isLoadingMore
+  const isLoadingMore = loading && providers.length > 0
+  const isLoading = loading && providers.length === 0
 
-  // React to resolved query data
   useEffect(() => {
-    if (!data) return
-    const page = data.searchProviders.providers
-    setProviders((prev) => (appendRef.current ? [...prev, ...page.providers] : page.providers))
-    setCanLoadMore(page.canLoadMore)
-    if (appendRef.current) {
-      setPageNum((p) => p + 1)
-      setIsLoadingMore(false)
-    }
-    appendRef.current = false
-  }, [data])
-
-  const runQuery = (page: number) => {
-    executeQuery({
-      variables: {
-        rawDisorders: rawDisordersRef.current,
-        pageSize: PAGE_SIZE,
-        pageNum: page,
+    const rawDisorders = readTopicsFromSession()
+    executeQuery({ variables: { rawDisorders, pageSize: PAGE_SIZE, pageNum: 1 } }).then(
+      (result) => {
+        if (!result.data) return
+        const page = get(result, 'data.searchProviders.providers') as ProvidersResponse
+        setProviders(page.providers)
+        setCanLoadMore(page.canLoadMore)
       },
+    )
+  }, [executeQuery])
+
+  const loadMore = async () => {
+    const nextPage = pageNum + 1
+    setPageNum(nextPage)
+    const rawDisorders = readTopicsFromSession()
+    const result = await executeQuery({
+      variables: { rawDisorders, pageSize: PAGE_SIZE, pageNum: nextPage },
     })
+    if (result.data) {
+      const page = get(result, 'data.searchProviders.providers') as ProvidersResponse
+      setProviders((prev) => [...prev, ...page.providers])
+      setCanLoadMore(page.canLoadMore)
+    }
   }
 
-  useEffect(() => {
-    rawDisordersRef.current = readTopicsFromSession()
-    runQuery(1)
-  }, [])
-
-  const loadMore = () => {
-    appendRef.current = true
-    setIsLoadingMore(true)
-    runQuery(pageNum + 1)
-  }
-
-  const retry = () => {
-    appendRef.current = false
+  const retry = async () => {
     setProviders([])
     setPageNum(1)
-    runQuery(1)
+    const rawDisorders = readTopicsFromSession()
+    const result = await executeQuery({
+      variables: { rawDisorders, pageSize: PAGE_SIZE, pageNum: 1 },
+    })
+    if (result.data) {
+      const page = result.data.searchProviders.providers
+      setProviders(page.providers)
+      setCanLoadMore(page.canLoadMore)
+    }
   }
 
   return { providers, isLoading, isLoadingMore, canLoadMore, error, loadMore, retry }

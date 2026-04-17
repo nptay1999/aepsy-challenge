@@ -4,7 +4,7 @@ import Image from '@/components/image'
 function B2bBanner() {
   return (
     <section className="px-4 py-8 md:px-6 md:py-12 bg-[#c4a47e33]">
-      <Card className="overflow-hidden border-0 shadow-md">
+      <Card className="overflow-hidden border-0 shadow-md p-0">
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-0 p-0">
           {/* Left: phone visual */}
           <Image

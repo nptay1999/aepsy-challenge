@@ -61,7 +61,11 @@ export function PsychologistList({ onBack }: PsychologistListProps) {
       </div>
       {canLoadMore && (
         <div className="flex justify-center">
-          <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
+          <Button
+            onClick={loadMore}
+            disabled={isLoadingMore}
+            className="rounded-full bg-peach-500 hover:bg-peach-600 text-white px-4"
+          >
             {isLoadingMore ? (
               <>
                 <LoaderCircleIcon className="size-4 animate-spin mr-2" />

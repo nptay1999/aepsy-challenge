@@ -28,7 +28,6 @@ export default function Onboarding() {
       <main className="bg-primary-foreground px-0 lg:px-4 flex-1 flex">
         <Stepper
           value={activeStep}
-          onValueChange={setActiveStep}
           indicators={{
             completed: <CheckIcon className="size-3.5" />,
             loading: <LoaderCircleIcon className="size-3.5 animate-spin" />,
