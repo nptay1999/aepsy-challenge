@@ -28,7 +28,7 @@ async function goToStep2(
       ONBOARDING_PAYLOAD_WITH_AUDIO,
     )
     await page.evaluate((data) => {
-      const store = (window as Record<string, unknown>).__onboardingStore as
+      const store = (window as unknown as Record<string, unknown>).__onboardingStore as
         | { setState: (s: object) => void }
         | undefined
       store?.setState(data)
@@ -147,7 +147,7 @@ test.describe('step 2 — error state', () => {
 
     // Update in-memory store with audio so next attempt succeeds
     await page.evaluate((data) => {
-      const store = (window as Record<string, unknown>).__onboardingStore as
+      const store = (window as unknown as Record<string, unknown>).__onboardingStore as
         | { setState: (s: object) => void }
         | undefined
       store?.setState(data)
