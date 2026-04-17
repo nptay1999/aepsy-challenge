@@ -10,9 +10,10 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-3">
             <a
-              href="#"
+              href="https://www.linkedin.com/in/ph%C6%B0%C6%A1ng-t%C3%A2y-nguy%E1%BB%85n-bab249228/"
               aria-label="LinkedIn"
               className="text-white/70 transition-colors hover:text-white"
+              target="__blank"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +32,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <p className="text-xs text-white/50">
-          © {new Date().getFullYear()} Aepsy. All rights reserved.
+          © {new Date().getFullYear()} Nguyen Phuong Tay. All rights reserved.
         </p>
       </div>
     </footer>

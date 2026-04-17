@@ -1,6 +1,7 @@
+import { Github } from '@/assets'
 import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
-import { AlignRight, Globe } from 'lucide-react'
+import { Button } from '../ui/button'
 
 type NavbarProps = { variant?: 'white' | 'primary' }
 
@@ -23,29 +24,31 @@ export default function Navbar({ variant = 'white' }: NavbarProps) {
 
       <div
         className={cn(
-          'hidden items-center gap-4 text-sm md:flex',
+          'items-center gap-4 text-sm flex',
           variant === 'white' && 'text-white/90',
           variant === 'primary' && 'text-primary/90',
         )}
       >
-        <span
-          className={cn(
-            'flex cursor-pointer items-center gap-1 hover:text-white',
-            variant === 'white' && 'hover:text-white',
-            variant === 'primary' && 'hover:text-primary',
-          )}
-        >
-          <Globe className="size-3.5" /> EN
-        </span>
+        <a href="https://github.com/nptay1999/aepsy-challenge" target="__blank">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'flex cursor-pointer items-center gap-1 hover:bg-transparent',
+              variant === 'white' && 'hover:text-white',
+              variant === 'primary' && 'hover:text-primary',
+            )}
+          >
+            <Github
+              className={cn(
+                'size-5',
+                variant === 'white' && 'text-white',
+                variant === 'primary' && 'text-primary',
+              )}
+            />
+          </Button>
+        </a>
       </div>
-
-      <AlignRight
-        className={cn(
-          'size-6 cursor-pointer text-white md:hidden',
-          variant === 'white' && 'text-white',
-          variant === 'primary' && 'text-primary',
-        )}
-      />
     </nav>
   )
 }

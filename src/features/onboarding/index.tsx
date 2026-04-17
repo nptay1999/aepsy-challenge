@@ -36,8 +36,8 @@ export default function Onboarding() {
         >
           {activeStep !== 1 && (
             <Button
-              size="icon-lg"
-              className="absolute top-6 left-0 lg:top-20 lg:left-16 rounded-full"
+              size="icon"
+              className="absolute top-6 -left-2 lg:top-6.5 lg:left-16 rounded-full"
               variant="ghost"
               onClick={() => setActiveStep((step) => step - 1)}
             >
@@ -56,7 +56,7 @@ export default function Onboarding() {
             ))}
           </StepperPanel>
 
-          <StepperNav className="lg:px-8">
+          <StepperNav className="lg:px-8 max-w-3xl mx-auto">
             {stepTitles.map((title, index) => (
               <StepperItem key={index} step={index + 1} className="relative">
                 <StepperTrigger className="flex justify-start gap-1.5">
